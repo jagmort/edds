@@ -9,6 +9,19 @@ import config as cfg
 import paramiko
 import time
 import ipcalc
+
+# xls columns
+class XLS(object):
+    SERV = 3
+    ADDR = 4
+    IP = 12
+    VIP = 13
+    PORT = 19
+
+    def __setattr__(self, *_):
+        pass
+XLS = XLS()
+
  
 def getDataFromFile(fileName):
     with xlrd.open_workbook(fileName) as wb:
@@ -29,8 +42,9 @@ for file in glob.glob("*.xlsx"):
 OPTIONS = []
 WIDTH = 0
 for r in data:
-    if data[r][12] != '':
-        addr = str(r + 1) + ': ' + data[r][3] + ' ' + data[r][4]
+    # get rows with IPs only
+    if data[r][XLS.IP] != '':
+        addr = str(r + 1) + ': ' + data[r][XLS.SERV] + ' ' + data[r][XLS.ADDR]
         OPTIONS.append(addr)
         if WIDTH == 0:
             init = r
@@ -44,8 +58,8 @@ def get(opt):
     result = re.search(r'(\S+):', opt)
     if result:
         found = result.group(1)
-    address = data[int(found) - 1][4]
-    result = re.search(r'([\d\.\/]+)([^\d]+)([\d\.\/]+)([^\d]*)([\d\.\/]*)', data[int(found) - 1][12])
+    address = data[int(found) - 1][XLS.ADDR]
+    result = re.search(r'([\d\.\/]+)([^\d]+)([\d\.\/]+)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.IP])
     if result:
         str1 = result.group(1)
         str2 = result.group(3)  
@@ -56,7 +70,7 @@ def get(opt):
         IP3.set(str3)
     else:
         IP3.set('x')
-    result = re.search(r'([\d\.\/]*)([^\d]*)([\d\.\/]*)', data[int(found) - 1][13])
+    result = re.search(r'([\d\.\/]*)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.VIP])
     if result:
         strv1 = result.group(1)
         strv2 = result.group(3)
@@ -68,9 +82,9 @@ def get(opt):
         IPV2.set(strv2)
     else:
         IPV2.set('x')
-    strInt = data[int(found) - 1][19]
+    strInt = data[int(found) - 1][XLS.PORT]
     if strInt != '':
-        Int.set(data[int(found) - 1][19])
+        Int.set(strInt)
     else:
         Int.set('x')
 
