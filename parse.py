@@ -60,17 +60,25 @@ def get(opt):
     if result:
         found = result.group(1)
     address = data[int(found) - 1][XLS.ADDR]
+    
     result = re.search(r'([\d\.\/]+)([^\d]+)([\d\.\/]+)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.IP])
     if result:
         str1 = result.group(1)
         str2 = result.group(3)  
         str3 = result.group(5)
-    IP1.set(str1)
-    IP2.set(str2)
+    if str1 != '':
+        IP1.set(str1)
+    else:
+        IP1.set('x')
+    if str2 != '':
+        IP2.set(str2)
+    else:
+        IP2.set('x')
     if str3 != '':
         IP3.set(str3)
     else:
         IP3.set('x')
+        
     result = re.search(r'([\d\.\/]*)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.VIP])
     if result:
         strv1 = result.group(1)
@@ -83,6 +91,7 @@ def get(opt):
         IPV2.set(strv2)
     else:
         IPV2.set('x')
+        
     strInt = data[int(found) - 1][XLS.PORT]
     if strInt != '':
         Int.set(strInt)
