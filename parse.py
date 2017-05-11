@@ -17,6 +17,7 @@ class XLS(object):
     IP = 12
     VIP = 13
     PORT = 19
+    FIRST = 4 # first row
 
     def __setattr__(self, *_):
         pass
@@ -27,9 +28,9 @@ def getDataFromFile(fileName):
     with xlrd.open_workbook(fileName) as wb:
         worksheet = wb.sheet_by_index(0)
         data = {}
-        for r in range(4, worksheet.nrows):
+        for r in range(XLS.FIRST, worksheet.nrows):
             data[r] = {}
-            for c in range(0, 20):
+            for c in range(0, XLS.PORT + 1):
                 data[r][c] = worksheet.cell(r, c).value
 
         return data
