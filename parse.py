@@ -102,7 +102,7 @@ def get(opt):
 def pinger():
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(cfg.ssh['host'], username=cfg.ssh['login'], password=cfg.ssh['password'], port=1122)
+        ssh.connect(cfg.ssh['host'], username = cfg.ssh['login'], password = cfg.ssh['password'], port = cfg.ssh['port'])
 
         channel = ssh.invoke_shell()
         channel.settimeout(cfg.ssh['timeout'])
