@@ -23,7 +23,7 @@ class XLS(object):
         pass
 XLS = XLS()
 
- 
+
 def getDataFromFile(fileName):
     with xlrd.open_workbook(fileName) as wb:
         worksheet = wb.sheet_by_index(0)
@@ -35,9 +35,9 @@ def getDataFromFile(fileName):
 
         return data
 
-for file in glob.glob("*.xlsx"):    
+for file in glob.glob("*.xlsx"):
     data = getDataFromFile(file)
-         
+
 
 # address list for dropmenu
 OPTIONS = []
@@ -60,11 +60,11 @@ def get(opt):
     if result:
         found = result.group(1)
     address = data[int(found) - 1][XLS.ADDR]
-    
+
     result = re.search(r'([\d\.\/]+)([^\d]+)([\d\.\/]+)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.IP])
     if result:
         str1 = result.group(1)
-        str2 = result.group(3)  
+        str2 = result.group(3)
         str3 = result.group(5)
     if str1 != '':
         IP1.set(str1)
@@ -78,7 +78,7 @@ def get(opt):
         IP3.set(str3)
     else:
         IP3.set('x')
-        
+
     result = re.search(r'([\d\.\/]*)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.VIP])
     if result:
         strv1 = result.group(1)
@@ -91,7 +91,7 @@ def get(opt):
         IPV2.set(strv2)
     else:
         IPV2.set('x')
-        
+
     strInt = data[int(found) - 1][XLS.PORT]
     if strInt != '':
         Int.set(strInt)
@@ -147,7 +147,7 @@ def pinger():
             output = channel.recv(65536)
             ent.insert(END, output)
             print output,
-        
+
         if IPV2.get() != 'x':
             channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ipv2) + '\n')
             time.sleep(8)
@@ -184,12 +184,12 @@ def pinger():
             time.sleep(1)
             output = channel.recv(1024)
             print output,
-            
+
         channel.send('quit\n')
         time.sleep(1)
         output = channel.recv(1024)
         print output,
-        
+
         ssh.close()
 
 
@@ -216,7 +216,7 @@ def create_window():
         ipv2 = networkv2.host_first()
     pinger()
 
-    
+
 root = Tk()
 root.title("EDDS")
 root.iconbitmap(r'favicon.ico')
@@ -238,7 +238,7 @@ IPV2 = StringVar()
 IPV2.set('x')
 Int = StringVar()
 Int.set('x')
-   
+
 
 Label(textvariable = IP1).pack(side = LEFT)
 Label(textvariable = IP2).pack(side = LEFT)
