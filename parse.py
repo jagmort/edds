@@ -20,6 +20,7 @@ class XLS(object):
     FIRST = 4 # first row
     PING = 'ping -m 1 -c 3 -vpn-instance 112 %s\n'
     SLEEP = 8
+    LOST = 50
 
     def __setattr__(self, *_):
         pass
@@ -62,6 +63,7 @@ def get(opt):
     if result:
         found = result.group(1)
     address = data[int(found) - 1][XLS.ADDR]
+    print '=' * 80 + "\n" + str(int(found)) + ': ' + data[int(found) - 1][XLS.SERV] + ' ' + data[int(found) - 1][XLS.ADDR] + "\n"
 
     result = re.search(r'([\d\.\/]+)([^\d]+)([\d\.\/]+)([^\d]*)([\d\.\/]*)', data[int(found) - 1][XLS.IP])
     if result:
@@ -109,152 +111,24 @@ def get(opt):
 
 
 def ping_pl(text):
-    mac = ''
     for line in text.splitlines():
          result = re.search(r'([\d\.]+)% packet loss', line)
-         if result:
-             mac = result.group(1)
-             break
-    return mac
-    
-def mac_pl(text):
-    for line in text.splitlines():
-         result = re.search(r'([0-9a-fA-F]{2}(?::[0-9a-f]{2}){5})', line)
          if result:
              break
     return result.group(1)
     
+def mac_pl(text):
+    mac = ''
+    for line in text.splitlines():
+         result = re.search(r'([0-9a-fA-F]{2}(?::[0-9a-f]{2}){5})', line)
+         if result:
+            mac = result.group(1)
+            break
+    return mac
+    
 def pinger():
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(cfg.ssh['host'], username = cfg.ssh['login'], password = cfg.ssh['password'], port = cfg.ssh['port'])
-
-        channel = ssh.invoke_shell()
-        channel.settimeout(cfg.ssh['timeout'])
-
-        channel.send('open ' + cfg.telnet['host'] + '\n')
-        time.sleep(5)
-        output = channel.recv(1024)
-        print output,
-        channel.send(cfg.telnet['login'] + '\n')
-        time.sleep(1)
-        output = channel.recv(1024)
-        print output,
-        channel.send(cfg.telnet['password'] + '\n')
-        time.sleep(1)
-        output = channel.recv(1024)
-        print output,
-        channel.send(XLS.PING % str(ip1))
-        time.sleep(XLS.SLEEP)
-        output = channel.recv(65536)
-        print output,
-        ip1_ping = ping_pl(output)
-        if float(ip1_ping) > 0:
-            LIP1.configure(bg = 'red')
-        else:
-            LIP1.configure(bg = 'green')           
-        ent.insert(END, 'Основной %s%% потерь\n' % ip1_ping)
-        channel.send(XLS.PING % str(ip2))
-        time.sleep(XLS.SLEEP)
-        output = channel.recv(65536)
-        print output,
-        ip2_ping = ping_pl(output)
-        if float(ip2_ping) > 0:
-            LIP2.configure(bg = 'red')
-        else:
-            LIP2.configure(bg = 'green')           
-        ent.insert(END, 'Резервный %s%% потерь\n' % ip2_ping)
-
-        if IP3.get() != 'x':
-            channel.send(XLS.PING % str(ip3))
-            time.sleep(XLS.SLEEP)
-            output = channel.recv(65536)
-            print output,
-            ip3_ping = ping_pl(output)
-            if float(ip3_ping) > 0:
-                LIP3.configure(bg = 'red')
-            else:
-                LIP3.configure(bg = 'green')           
-            ent.insert(END, 'Третий %s%% потерь\n' % ip3_ping)
-
-        if IPV1.get() != 'x':
-            channel.send(XLS.PING % str(ipv1))
-            time.sleep(XLS.SLEEP)
-            output = channel.recv(65536)
-            print output,
-            ipv1_ping = ping_pl(output)
-            if float(ipv1_ping) > 0:
-                LIPV1.configure(bg = 'red')
-            else:
-                LIPV1.configure(bg = 'green')           
-            ent.insert(END, 'VipNet1 %s%% потерь\n' % ipv1_ping)
-
-        if IPV2.get() != 'x':
-            channel.send(XLS.PING % str(ipv2))
-            time.sleep(XLS.SLEEP)
-            output = channel.recv(65536)
-            print output,
-            ipv2_ping = ping_pl(output)
-            if float(ipv2_ping) > 0:
-                LIPV2.configure(bg = 'red')
-            else:
-                LIPV2.configure(bg = 'green')           
-            ent.insert(END, 'VipNet2 %s%% потерь\n' % ipv2_ping)
-
-        if Int.get() != 'x':
-            ip = ''
-            if float(ip1_ping) < 100:
-                ip = str(ip1)
-            elif float(ip2_ping) < 100:
-                ip = str(ip2)
-            if ip != '':
-                channel.send('telnet vpn-instance 112 ' + ip + '\n')
-                time.sleep(5)
-                output = channel.recv(1024)
-                print output,
-                channel.send(cfg.edds['login'] + '\n')
-                time.sleep(1)
-                output = channel.recv(1024)
-                print output,
-                channel.send(cfg.edds['password'] + '\n')
-                time.sleep(3)
-                output = channel.recv(1024)
-                print output,
-##                channel.send('show interfaces descriptions ' + Int.get() + '\n')
-##                time.sleep(3)
-##                output = channel.recv(1024)
-##
-##                ent.insert(END, output)
-##                print output,
-                channel.send('show arp no-resolve interface ' + Int.get() + '\n')
-                time.sleep(3)
-                output = channel.recv(1024)
-                print output,
-                mac = mac_pl(output)
-                if mac != '':
-                    LInt.configure(bg = 'green')
-                else:
-                    LInt.configure(bg = 'red')           
-                ent.insert(END, 'MAC %s\n' % mac)
-                channel.send('quit\n')
-                time.sleep(1)
-                output = channel.recv(1024)
-                print output,
-
-        channel.send('quit\n')
-        time.sleep(1)
-        output = channel.recv(1024)
-        print output,
-
-        ssh.close()
-
-
-def create_window():
     global ent, ip1, ip2, ip3, ipv1, ipv2
-    window = Toplevel()
-    window.title(address);
-    ent = ScrolledText(window, width = 40, height = 20)
-    ent.pack(expand=Y, fill=BOTH)
+    
     if IP1.get() != 'x':
         network1 = ipcalc.Network(IP1.get())
         ip1 = network1.host_first() + 1
@@ -270,7 +144,158 @@ def create_window():
     if IPV2.get() != 'x':
         networkv2 = ipcalc.Network(IPV2.get())
         ipv2 = networkv2.host_first()
-    pinger()
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(cfg.ssh['host'], username = cfg.ssh['login'], password = cfg.ssh['password'], port = cfg.ssh['port'])
+
+    channel = ssh.invoke_shell()
+    channel.settimeout(cfg.ssh['timeout'])
+
+    channel.send('open ' + cfg.telnet['host'] + '\n')
+    time.sleep(5)
+    output = channel.recv(1024)
+    print output,
+    channel.send(cfg.telnet['login'] + '\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+    channel.send(cfg.telnet['password'] + '\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+    channel.send(XLS.PING % str(ip1))
+    time.sleep(XLS.SLEEP)
+    output = channel.recv(65536)
+    print output,
+    ip1_ping = ping_pl(output)
+    if float(ip1_ping) > 0:
+        LIP1.configure(bg = 'red')
+    else:
+        LIP1.configure(bg = 'green')           
+    channel.send(XLS.PING % str(ip2))
+    time.sleep(XLS.SLEEP)
+    output = channel.recv(65536)
+    print output,
+    ip2_ping = ping_pl(output)
+    if float(ip2_ping) > 0:
+        LIP2.configure(bg = 'red')
+    else:
+        LIP2.configure(bg = 'green')           
+
+    if IP3.get() != 'x':
+        channel.send(XLS.PING % str(ip3))
+        time.sleep(XLS.SLEEP)
+        output = channel.recv(65536)
+        print output,
+        ip3_ping = ping_pl(output)
+        if float(ip3_ping) > 0:
+            LIP3.configure(bg = 'red')
+        else:
+            LIP3.configure(bg = 'green')           
+
+    if IPV1.get() != 'x':
+        channel.send(XLS.PING % str(ipv1))
+        time.sleep(XLS.SLEEP)
+        output = channel.recv(65536)
+        print output,
+        ipv1_ping = ping_pl(output)
+        if float(ipv1_ping) > 0:
+            LIPV1.configure(bg = 'red')
+        else:
+            LIPV1.configure(bg = 'green')           
+
+    if IPV2.get() != 'x':
+        channel.send(XLS.PING % str(ipv2))
+        time.sleep(XLS.SLEEP)
+        output = channel.recv(65536)
+        print output,
+        ipv2_ping = ping_pl(output)
+        if float(ipv2_ping) > 0:
+            LIPV2.configure(bg = 'red')
+        else:
+            LIPV2.configure(bg = 'green')           
+
+    if Int.get() != 'x':
+        ip = ''
+        if float(ip1_ping) < XLS.LOST:
+            ip = str(ip1)
+        elif float(ip2_ping) < XLS.LOST:
+            ip = str(ip2)
+        if ip != '':
+            channel.send('telnet vpn-instance 112 ' + ip + '\n')
+            time.sleep(5)
+            output = channel.recv(1024)
+            print output,
+            channel.send(cfg.edds['login'] + '\n')
+            time.sleep(1)
+            output = channel.recv(1024)
+            print output,
+            channel.send(cfg.edds['password'] + '\n')
+            time.sleep(3)
+            output = channel.recv(1024)
+            print output,
+##                channel.send('show interfaces descriptions ' + Int.get() + '\n')
+##                time.sleep(3)
+##                output = channel.recv(1024)
+##
+##                ent.insert(END, output)
+##                print output,
+            channel.send('show arp no-resolve interface ' + Int.get() + '\n')
+            time.sleep(3)
+            output = channel.recv(1024)
+            print output,
+            mac = mac_pl(output)
+            if mac != '':
+                LInt.configure(bg = 'green')
+            else:
+                LInt.configure(bg = 'red')           
+            channel.send('quit\n')
+            time.sleep(1)
+            output = channel.recv(1024)
+            print output,
+
+    channel.send('quit\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+
+    ssh.close()
+
+def simple():
+    ip = ipcalc.IP(IPS.get())
+    print '=' * 80 + "\nping " + str(ip) + '\n'
+    
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(cfg.ssh['host'], username = cfg.ssh['login'], password = cfg.ssh['password'], port = cfg.ssh['port'])
+
+    channel = ssh.invoke_shell()
+    channel.settimeout(cfg.ssh['timeout'])
+
+    channel.send('open ' + cfg.telnet['host'] + '\n')
+    time.sleep(5)
+    output = channel.recv(1024)
+    print output,
+    channel.send(cfg.telnet['login'] + '\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+    channel.send(cfg.telnet['password'] + '\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+    channel.send(XLS.PING % str(ip))
+    time.sleep(XLS.SLEEP)
+    output = channel.recv(65536)
+    print output,
+
+    channel.send('quit\n')
+    time.sleep(1)
+    output = channel.recv(1024)
+    print output,
+
+    ssh.close()
 
 
 root = Tk()
@@ -278,10 +303,14 @@ root.title("EDDS")
 root.iconbitmap(r'favicon.ico')
 opt = StringVar()
 
-w = OptionMenu(root, opt, *OPTIONS, command = get)
-w.configure(width = WIDTH, anchor = W)
-w.pack(fill = BOTH)
+fm0 = Frame(root, padx=5, pady=5)
 
+w = OptionMenu(fm0, opt, *OPTIONS, command = get)
+w.configure(width = WIDTH, anchor = W)
+w.pack(fill = X)
+
+fm0.pack(fill = X, expand=YES)
+fm = Frame(root, padx = 5, pady = 5)
 IP1 = StringVar()
 IP1.set('x')
 IP2 = StringVar()
@@ -294,20 +323,28 @@ IPV2 = StringVar()
 IPV2.set('x')
 Int = StringVar()
 Int.set('x')
+IPS = StringVar()
+IPS.set('10.220.0.1')
 
-LIP1 = Label(textvariable = IP1)
+LIP1 = Label(fm, textvariable = IP1)
 LIP1.pack(side = LEFT)
-LIP2 = Label(textvariable = IP2)
+LIP2 = Label(fm, textvariable = IP2)
 LIP2.pack(side = LEFT)
-LIP3 = Label(textvariable = IP3)
+LIP3 = Label(fm, textvariable = IP3)
 LIP3.pack(side = LEFT)
-LIPV1 = Label(textvariable = IPV1)
+LIPV1 = Label(fm, textvariable = IPV1)
 LIPV1.pack(side = LEFT)
-LIPV2 = Label(textvariable = IPV2)
+LIPV2 = Label(fm, textvariable = IPV2)
 LIPV2.pack(side = LEFT)
-LInt = Label(textvariable = Int)
+LInt = Label(fm, textvariable = Int)
 LInt.pack(side = LEFT)
-Button(text = 'Go', command=create_window).pack(fill = BOTH)
+Button(fm, text = 'Go', command=pinger, width = 6).pack(side = LEFT)
+fm.pack(side = LEFT, expand = YES)
+
+fm2 = Frame(root, padx = 5, pady = 5)
+Entry(fm2, textvariable = IPS).pack(side = LEFT)
+Button(fm2, text = 'Ping', command=simple, width = 6).pack(side = LEFT)
+fm2.pack(fill = X, expand = YES)
 
 root.mainloop()
 
