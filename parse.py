@@ -120,7 +120,7 @@ def ping_pl(text):
 def mac_pl(text):
     mac = ''
     for line in text.splitlines():
-         result = re.search(r'([0-9a-fA-F]{2}(?::[0-9a-f]{2}){5})', line)
+         result = re.search(r'([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})', line)
          if result:
             mac = result.group(1)
             break
@@ -258,7 +258,7 @@ def pinger():
     channel.send('quit\n')
     time.sleep(1)
     output = channel.recv(1024)
-    print output,
+    print output
 
     ssh.close()
 
@@ -293,7 +293,7 @@ def simple():
     channel.send('quit\n')
     time.sleep(1)
     output = channel.recv(1024)
-    print output,
+    print output
 
     ssh.close()
 
