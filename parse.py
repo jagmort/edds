@@ -99,14 +99,23 @@ def get(opt):
         Int.set(strInt)
     else:
         Int.set('x')
+        
+    LIP1.configure(bg = 'SystemButtonFace')
+    LIP2.configure(bg = 'SystemButtonFace')
+    LIP3.configure(bg = 'SystemButtonFace')
+    LIPV1.configure(bg = 'SystemButtonFace')
+    LIPV2.configure(bg = 'SystemButtonFace')
+    LInt.configure(bg = 'SystemButtonFace')
 
 
 def ping_pl(text):
+    mac = ''
     for line in text.splitlines():
          result = re.search(r'([\d\.]+)% packet loss', line)
          if result:
+             mac = result.group(1)
              break
-    return result.group(1)
+    return mac
     
 def mac_pl(text):
     for line in text.splitlines():
@@ -140,12 +149,20 @@ def pinger():
         output = channel.recv(65536)
         print output,
         ip1_ping = ping_pl(output)
+        if float(ip1_ping) > 0:
+            LIP1.configure(bg = 'red')
+        else:
+            LIP1.configure(bg = 'green')           
         ent.insert(END, 'Основной %s%% потерь\n' % ip1_ping)
         channel.send(XLS.PING % str(ip2))
         time.sleep(XLS.SLEEP)
         output = channel.recv(65536)
         print output,
         ip2_ping = ping_pl(output)
+        if float(ip2_ping) > 0:
+            LIP2.configure(bg = 'red')
+        else:
+            LIP2.configure(bg = 'green')           
         ent.insert(END, 'Резервный %s%% потерь\n' % ip2_ping)
 
         if IP3.get() != 'x':
@@ -154,6 +171,10 @@ def pinger():
             output = channel.recv(65536)
             print output,
             ip3_ping = ping_pl(output)
+            if float(ip3_ping) > 0:
+                LIP3.configure(bg = 'red')
+            else:
+                LIP3.configure(bg = 'green')           
             ent.insert(END, 'Третий %s%% потерь\n' % ip3_ping)
 
         if IPV1.get() != 'x':
@@ -162,6 +183,10 @@ def pinger():
             output = channel.recv(65536)
             print output,
             ipv1_ping = ping_pl(output)
+            if float(ipv1_ping) > 0:
+                LIPV1.configure(bg = 'red')
+            else:
+                LIPV1.configure(bg = 'green')           
             ent.insert(END, 'VipNet1 %s%% потерь\n' % ipv1_ping)
 
         if IPV2.get() != 'x':
@@ -170,6 +195,10 @@ def pinger():
             output = channel.recv(65536)
             print output,
             ipv2_ping = ping_pl(output)
+            if float(ipv2_ping) > 0:
+                LIPV2.configure(bg = 'red')
+            else:
+                LIPV2.configure(bg = 'green')           
             ent.insert(END, 'VipNet2 %s%% потерь\n' % ipv2_ping)
 
         if Int.get() != 'x':
@@ -202,6 +231,10 @@ def pinger():
                 output = channel.recv(1024)
                 print output,
                 mac = mac_pl(output)
+                if mac != '':
+                    LInt.configure(bg = 'green')
+                else:
+                    LInt.configure(bg = 'red')           
                 ent.insert(END, 'MAC %s\n' % mac)
                 channel.send('quit\n')
                 time.sleep(1)
@@ -262,13 +295,18 @@ IPV2.set('x')
 Int = StringVar()
 Int.set('x')
 
-
-Label(textvariable = IP1).pack(side = LEFT)
-Label(textvariable = IP2).pack(side = LEFT)
-Label(textvariable = IP3).pack(side = LEFT)
-Label(textvariable = IPV1).pack(side = LEFT)
-Label(textvariable = IPV2).pack(side = LEFT)
-Label(textvariable = Int).pack(side = LEFT)
+LIP1 = Label(textvariable = IP1)
+LIP1.pack(side = LEFT)
+LIP2 = Label(textvariable = IP2)
+LIP2.pack(side = LEFT)
+LIP3 = Label(textvariable = IP3)
+LIP3.pack(side = LEFT)
+LIPV1 = Label(textvariable = IPV1)
+LIPV1.pack(side = LEFT)
+LIPV2 = Label(textvariable = IPV2)
+LIPV2.pack(side = LEFT)
+LInt = Label(textvariable = Int)
+LInt.pack(side = LEFT)
 Button(text = 'Go', command=create_window).pack(fill = BOTH)
 
 root.mainloop()
