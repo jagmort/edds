@@ -97,17 +97,21 @@ def get(opt):
         IPV2.set('x')
 
     strInt = data[int(found) - 1][XLS.PORT]
+    
     if strInt != '':
         Int.set(strInt)
     else:
         Int.set('x')
         
-    LIP1.configure(bg = 'SystemButtonFace')
-    LIP2.configure(bg = 'SystemButtonFace')
-    LIP3.configure(bg = 'SystemButtonFace')
-    LIPV1.configure(bg = 'SystemButtonFace')
-    LIPV2.configure(bg = 'SystemButtonFace')
-    LInt.configure(bg = 'SystemButtonFace')
+    MAC.set('x')
+    
+    LIP1.configure(bg = 'SystemWindow')
+    LIP2.configure(bg = 'SystemWindow')
+    LIP3.configure(bg = 'SystemWindow')
+    LIPV1.configure(bg = 'SystemWindow')
+    LIPV2.configure(bg = 'SystemWindow')
+    LInt.configure(bg = 'SystemWindow')
+    LMAC.configure(bg = 'SystemWindow')
 
 
 def ping_pl(text):
@@ -125,6 +129,15 @@ def mac_pl(text):
             mac = result.group(1)
             break
     return mac
+
+def int_pl(text):
+    status = ''
+    for line in text.splitlines():
+         result = re.search(r'Physical link is ([A-z]+)', line)
+         if result:
+            status = result.group(1)
+            break
+    return status
     
 def pinger():
     global ent, ip1, ip2, ip3, ipv1, ipv2
@@ -235,21 +248,32 @@ def pinger():
             time.sleep(3)
             output = channel.recv(1024)
             print output,
-##                channel.send('show interfaces descriptions ' + Int.get() + '\n')
-##                time.sleep(3)
-##                output = channel.recv(1024)
-##
-##                ent.insert(END, output)
-##                print output,
-            channel.send('show arp no-resolve interface ' + Int.get() + '\n')
-            time.sleep(3)
+
+            channel.send('show interfaces ' + Int.get() + '\n')
+            time.sleep(2)
             output = channel.recv(1024)
             print output,
-            mac = mac_pl(output)
-            if mac != '':
-                LInt.configure(bg = 'green')
+            status = int_pl(output)
+            if status != 'Up':
+                LInt.configure(bg = 'red')
             else:
-                LInt.configure(bg = 'red')           
+                LInt.configure(bg = 'green')           
+                channel.send(' \n')
+                time.sleep(2)
+                output = channel.recv(1024)
+                print output,
+
+                channel.send('show arp no-resolve interface ' + Int.get() + '\n')
+                time.sleep(2)
+                output = channel.recv(1024)
+                print output,
+                mac = mac_pl(output)
+                if mac != '':
+                    MAC.set(mac)
+                    LMAC.configure(bg = 'green')
+                else:
+                    LMAC.configure(bg = 'red')
+                
             channel.send('quit\n')
             time.sleep(1)
             output = channel.recv(1024)
@@ -323,26 +347,30 @@ IPV2 = StringVar()
 IPV2.set('x')
 Int = StringVar()
 Int.set('x')
+MAC = StringVar()
+MAC.set('x')
 IPS = StringVar()
 IPS.set('10.220.0.1')
 
-LIP1 = Label(fm, textvariable = IP1)
+LIP1 = Entry(fm, textvariable = IP1, width = 16)
 LIP1.pack(side = LEFT)
-LIP2 = Label(fm, textvariable = IP2)
+LIP2 = Entry(fm, textvariable = IP2, width = 16)
 LIP2.pack(side = LEFT)
-LIP3 = Label(fm, textvariable = IP3)
+LIP3 = Entry(fm, textvariable = IP3, width = 16)
 LIP3.pack(side = LEFT)
-LIPV1 = Label(fm, textvariable = IPV1)
+LIPV1 = Entry(fm, textvariable = IPV1, width = 16)
 LIPV1.pack(side = LEFT)
-LIPV2 = Label(fm, textvariable = IPV2)
+LIPV2 = Entry(fm, textvariable = IPV2, width = 16)
 LIPV2.pack(side = LEFT)
-LInt = Label(fm, textvariable = Int)
+LInt = Entry(fm, textvariable = Int, width = 10)
 LInt.pack(side = LEFT)
+LMAC = Entry(fm, textvariable = MAC, width = 16)
+LMAC.pack(side = LEFT)
 Button(fm, text = 'Go', command=pinger, width = 6).pack(side = LEFT)
 fm.pack(side = LEFT, expand = YES)
 
 fm2 = Frame(root, padx = 5, pady = 5)
-Entry(fm2, textvariable = IPS).pack(side = LEFT)
+Entry(fm2, textvariable = IPS, width = 14).pack(side = LEFT)
 Button(fm2, text = 'Ping', command=simple, width = 6).pack(side = LEFT)
 fm2.pack(fill = X, expand = YES)
 
