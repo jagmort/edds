@@ -18,6 +18,8 @@ class XLS(object):
     VIP = 13
     PORT = 19
     FIRST = 4 # first row
+    PING = 'ping -m 1 -c 3 -vpn-instance 112 %s\n'
+    SLEEP = 8
 
     def __setattr__(self, *_):
         pass
@@ -99,6 +101,20 @@ def get(opt):
         Int.set('x')
 
 
+def ping_pl(text):
+    for line in text.splitlines():
+         result = re.search(r'([\d\.]+)% packet loss', line)
+         if result:
+             break
+    return result.group(1)
+    
+def mac_pl(text):
+    for line in text.splitlines():
+         result = re.search(r'([0-9a-fA-F]{2}(?::[0-9a-f]{2}){5})', line)
+         if result:
+             break
+    return result.group(1)
+    
 def pinger():
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -119,71 +135,78 @@ def pinger():
         time.sleep(1)
         output = channel.recv(1024)
         print output,
-        ent.insert(END, '+----------+\n| Основной |\n+----------+\n')
-        channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ip1) + '\n')
-        time.sleep(8)
+        channel.send(XLS.PING % str(ip1))
+        time.sleep(XLS.SLEEP)
         output = channel.recv(65536)
-        ent.insert(END, output)
         print output,
-        ent.insert(END, '\n\n+-----------+\n| Резервный |\n+-----------+\n')
-        channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ip2) + '\n')
-        time.sleep(8)
+        ip1_ping = ping_pl(output)
+        ent.insert(END, 'Основной %s%% потерь\n' % ip1_ping)
+        channel.send(XLS.PING % str(ip2))
+        time.sleep(XLS.SLEEP)
         output = channel.recv(65536)
-        ent.insert(END, output)
         print output,
+        ip2_ping = ping_pl(output)
+        ent.insert(END, 'Резервный %s%% потерь\n' % ip2_ping)
 
         if IP3.get() != 'x':
-            ent.insert(END, '\n\n+--------+\n| Третий |\n+--------+\n')
-            channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ip3) + '\n')
-            time.sleep(8)
+            channel.send(XLS.PING % str(ip3))
+            time.sleep(XLS.SLEEP)
             output = channel.recv(65536)
-            ent.insert(END, output)
             print output,
+            ip3_ping = ping_pl(output)
+            ent.insert(END, 'Третий %s%% потерь\n' % ip3_ping)
 
         if IPV1.get() != 'x':
-            ent.insert(END, '\n\n+--------+\n| VipNet |\n+--------+\n')
-            channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ipv1) + '\n')
-            time.sleep(8)
+            channel.send(XLS.PING % str(ipv1))
+            time.sleep(XLS.SLEEP)
             output = channel.recv(65536)
-            ent.insert(END, output)
             print output,
+            ipv1_ping = ping_pl(output)
+            ent.insert(END, 'VipNet1 %s%% потерь\n' % ipv1_ping)
 
         if IPV2.get() != 'x':
-            channel.send('ping -m 1 -c 3 -vpn-instance 112 ' + str(ipv2) + '\n')
-            time.sleep(8)
+            channel.send(XLS.PING % str(ipv2))
+            time.sleep(XLS.SLEEP)
             output = channel.recv(65536)
-            ent.insert(END, output)
             print output,
+            ipv2_ping = ping_pl(output)
+            ent.insert(END, 'VipNet2 %s%% потерь\n' % ipv2_ping)
 
         if Int.get() != 'x':
-            channel.send('telnet vpn-instance 112 ' + str(ip1) + '\n')
-            time.sleep(5)
-            output = channel.recv(1024)
-            print output,
-            channel.send(cfg.edds['login'] + '\n')
-            time.sleep(1)
-            output = channel.recv(1024)
-            print output,
-            channel.send(cfg.edds['password'] + '\n')
-            time.sleep(3)
-            output = channel.recv(1024)
-            ent.insert(END, '\n\n+------+\n| Порт |\n+------+')
-            ent.insert(END, output)
-            print output,
-            channel.send('show interfaces descriptions ' + Int.get() + '\n')
-            time.sleep(3)
-            output = channel.recv(1024)
-            ent.insert(END, output)
-            print output,
-            channel.send('show arp no-resolve interface ' + Int.get() + '\n')
-            time.sleep(3)
-            output = channel.recv(1024)
-            ent.insert(END, output)
-            print output,
-            channel.send('quit\n')
-            time.sleep(1)
-            output = channel.recv(1024)
-            print output,
+            ip = ''
+            if float(ip1_ping) < 100:
+                ip = str(ip1)
+            elif float(ip2_ping) < 100:
+                ip = str(ip2)
+            if ip != '':
+                channel.send('telnet vpn-instance 112 ' + ip + '\n')
+                time.sleep(5)
+                output = channel.recv(1024)
+                print output,
+                channel.send(cfg.edds['login'] + '\n')
+                time.sleep(1)
+                output = channel.recv(1024)
+                print output,
+                channel.send(cfg.edds['password'] + '\n')
+                time.sleep(3)
+                output = channel.recv(1024)
+                print output,
+##                channel.send('show interfaces descriptions ' + Int.get() + '\n')
+##                time.sleep(3)
+##                output = channel.recv(1024)
+##
+##                ent.insert(END, output)
+##                print output,
+                channel.send('show arp no-resolve interface ' + Int.get() + '\n')
+                time.sleep(3)
+                output = channel.recv(1024)
+                print output,
+                mac = mac_pl(output)
+                ent.insert(END, 'MAC %s\n' % mac)
+                channel.send('quit\n')
+                time.sleep(1)
+                output = channel.recv(1024)
+                print output,
 
         channel.send('quit\n')
         time.sleep(1)
@@ -197,7 +220,7 @@ def create_window():
     global ent, ip1, ip2, ip3, ipv1, ipv2
     window = Toplevel()
     window.title(address);
-    ent = ScrolledText(window, width = 80, height = 50)
+    ent = ScrolledText(window, width = 40, height = 20)
     ent.pack(expand=Y, fill=BOTH)
     if IP1.get() != 'x':
         network1 = ipcalc.Network(IP1.get())
