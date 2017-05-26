@@ -2,3 +2,5 @@
 /config*
 !/parse.py
 *.zip
+get-pip.py
+*.bat

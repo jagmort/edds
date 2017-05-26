@@ -327,7 +327,7 @@ root.title("EDDS")
 root.iconbitmap(r'favicon.ico')
 opt = StringVar()
 
-fm0 = Frame(root, padx=5, pady=5)
+fm0 = Frame(root, padx = 5, pady = 5)
 
 w = OptionMenu(fm0, opt, *OPTIONS, command = get)
 w.configure(width = WIDTH, anchor = W)
