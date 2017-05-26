@@ -4,7 +4,6 @@
 import xlrd
 import glob
 from Tkinter import *
-from ScrolledText import *
 import config as cfg
 import paramiko
 import time
