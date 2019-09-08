@@ -164,7 +164,7 @@ def pinger():
     channel = ssh.invoke_shell()
     channel.settimeout(cfg.ssh['timeout'])
 
-    channel.send('open ' + cfg.telnet['host'] + '\n')
+    channel.send('telnet ' + cfg.telnet['host'] + '\n')
     time.sleep(5)
     output = channel.recv(1024)
     print output,
@@ -278,7 +278,7 @@ def pinger():
             output = channel.recv(1024)
             print output,
 
-    channel.send('quit\n')
+    channel.send('exit\n')
     time.sleep(1)
     output = channel.recv(1024)
     print output
@@ -296,7 +296,7 @@ def simple():
     channel = ssh.invoke_shell()
     channel.settimeout(cfg.ssh['timeout'])
 
-    channel.send('open ' + cfg.telnet['host'] + '\n')
+    channel.send('telnet ' + cfg.telnet['host'] + '\n')
     time.sleep(5)
     output = channel.recv(1024)
     print output,
